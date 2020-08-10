@@ -1,41 +1,45 @@
 import React from 'react'
+import { connect } from 'react-redux'
 import CardsList from '../Components/CardsList'
 import SearchBox from '../Components/SearchBox'
 import Scroll from '../Components/Scroll'
 import ErrorBoundary from '../Components/ErrorBoundary'
 import './App.css'
 
-class App extends React.Component {
-    constructor() {
-        super()
-        this.state = {
-            robots: [],
-            searchField: ''
-        }
-    }
+import { setSearchField, requestRobots } from '../actions'
 
-    componentDidMount() {
-        fetch('https://jsonplaceholder.typicode.com/users')
-        .then(response => response.json())
-        .then(users => this.setState({ robots: users }))
+const mapStateToProps = state => {
+    return {
+        searchField: state.searchRobots.searchField,
+        robots: state.requestRobots.robots,
+        isPending: state.requestRobots.isPending,
+        error: state.requestRobots.error
     }
-    onSearchChange = (event) => {
-        this.setState({
-            searchField: event.target.value
-        })
+}
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        onSearchChange: (event) => dispatch(setSearchField(event.target.value)),
+        onRequestRobots: () => dispatch(requestRobots())
+    }
+}
+
+class App extends React.Component {
+    componentDidMount() {
+        this.props.onRequestRobots()
     }
 
     render() {
-        const { robots, searchField } = this.state
+        const { searchField, onSearchChange, robots, isPending } = this.props
         const filteredRobots = robots.filter(robot => {
                 return robot.name.toLowerCase().includes(searchField.toLowerCase())
         })
-        return !robots.length ?
+        return isPending ?
             <h1 className="tc">Loading</h1> :         
         (
             <div className = 'tc'>
                 <h1 className='f1'>RoboFriends</h1>
-                <SearchBox searchChange={this.onSearchChange}/>
+                <SearchBox searchChange={onSearchChange}/>
                 <Scroll>
                     <ErrorBoundary>
                         <CardsList robots = {filteredRobots} />
@@ -46,4 +50,4 @@ class App extends React.Component {
     }
 }
 
-export default App
+export default connect(mapStateToProps, mapDispatchToProps)(App)
